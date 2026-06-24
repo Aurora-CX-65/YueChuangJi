@@ -1,0 +1,108 @@
+# ============================================
+# 阅创集 (YueChuangJi) 生产环境 Docker Compose 覆盖文件
+# ============================================
+# 使用方式（合并两个 compose 文件）:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# 生产环境特性:
+#   - 数据库和 Redis 端口不暴露到公网
+#   - 前端支持 HTTPS/SSL
+#   - 严格的资源限制
+#   - 自动重启策略
+#   - 依赖健康检查
+# ============================================
+
+services:
+  # ---- MySQL: 生产模式不暴露端口 ----
+  mysql:
+    ports:
+      - "127.0.0.1:3306:3306"  # 仅绑定本地回环，不暴露公网
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # ---- Redis: 生产模式不暴露端口 ----
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"  # 仅绑定本地回环
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:?生产环境必须设置 Redis 密码}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ---- 后端: 生产优化 ----
+  backend:
+    ports:
+      - "127.0.0.1:8080:8080"  # 仅绑定本地回环，通过 Nginx 反向代理访问
+    environment:
+      # 覆盖开发默认值
+      SERVER_PORT: 8080
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-yuechuangji}
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_ROOT_PASSWORD:?生产环境必须设置数据库密码}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      FILE_UPLOAD_PATH: /uploads
+      # 生产环境文件访问使用公网域名
+      FILE_ACCESS_BASE_URL: ${PROTOCOL:-http}://${PUBLIC_DOMAIN:-localhost}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:?生产环境必须设置 JWT 密钥}
+      JAVA_OPTS: "-Xms512m -Xmx1g"
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+        reservations:
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
+  # ---- 前端: 生产模式（HTTPS + 域名） ----
+  frontend:
+    build:
+      context: ./YueChuangJiUI
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_API_TIMEOUT: "30000"
+        VITE_APP_TITLE: ${VITE_APP_TITLE:-阅创集}
+        VITE_APP_VERSION: ${APP_VERSION:-1.0.0}
+    environment:
+      SERVER_NAME: ${PUBLIC_DOMAIN:-localhost}
+      ENABLE_SSL: ${ENABLE_SSL:-false}
+    ports:
+      - "80:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      # SSL 证书挂载（生产环境必需）
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      # Certbot 验证目录
+      - ./docker/nginx/certbot:/var/www/certbot
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M

@@ -63,3 +63,16 @@ ehthumbs.db
 
 # ── 前端子项目继承自 YueChuangJiUI/.gitignore ─────────────────
 # node_modules/、dist/ 已在子目录 .gitignore 中定义
+
+# ── Docker 部署 ────────────────────────────────────────────
+# 环境变量文件（含敏感信息）
+.env
+
+# Docker 数据卷（运行时数据，不提交）
+docker/mysql/data/
+docker/redis/data/
+
+# SSL 证书（敏感文件）
+docker/nginx/ssl/fullchain.pem
+docker/nginx/ssl/privkey.pem
+docker/nginx/certbot/
