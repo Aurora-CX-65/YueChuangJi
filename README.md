@@ -4,7 +4,7 @@
 
 ## 项目概览
 
-阅创集是一款web应用，采用前后端分离架构，具备工具调用（Tool Calling）能力，专注于智能化内容创作场景。
+阅创集是一款 Web 应用，采用前后端分离架构，具备 AI 辅助创作能力，专注于智能化内容创作场景。
 
 | 模块 | 说明 | 仓库 |
 |------|------|------|
@@ -16,12 +16,14 @@
 
 **后端**
 - Spring Boot 3.5 / MyBatis-Plus / Spring Security + JWT
-- MySQL 8.0 / Redis / DeepSeek AI / 通义千问 VL
-- Swagger/OpenAPI 3.0
+- MySQL 8.0 / Redis / Druid 连接池
+- DeepSeek AI / OkHttp
+- Swagger/OpenAPI 3.0 (springdoc)
 
 **前端**
-- Vue 3 / Vite / TypeScript
-- 全中文 UI 本地化
+- Vue 3 / Vite / JavaScript
+- Pinia 状态管理 / Vue Router
+- Element Plus UI / TinyMCE 富文本编辑器
 
 ## 快速开始
 
@@ -53,6 +55,24 @@ npm install
 npm run dev
 ```
 
+### Docker 部署
+
+项目支持 Docker Compose 一键部署：
+
+```bash
+# 复制并修改环境变量
+cp .env.docker .env
+# 编辑 .env 中的敏感信息（密码、API Key 等）
+
+# 本地开发模式
+docker compose up -d
+
+# 生产模式
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+> 详细说明请参考 [DOCKER.md](DOCKER.md)
+
 ## 目录结构
 
 ```
@@ -62,7 +82,9 @@ YueChuangJi/
 ├── doc/
 │   ├── 接口文档/          ← API 规范与变更日志
 │   └── ...               ← 其他项目文档
+├── .env.docker           ← Docker 环境变量模板
 ├── .gitignore
 ├── .gitmodules
+├── DOCKER.md             ← Docker 部署说明
 └── README.md
 ```
