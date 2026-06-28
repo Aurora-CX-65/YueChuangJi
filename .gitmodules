@@ -1,6 +1,6 @@
 [submodule "YueChuangJiApi"]
 	path = YueChuangJiApi
-	url = git@github.com:Aurora-CX-65/YueChuangJiApi.git
+	url = https://github.com/Aurora-CX-65/YueChuangJiApi.git
 [submodule "YueChuangJiUI"]
 	path = YueChuangJiUI
-	url = git@github.com:Aurora-CX-65/YueChuangJiUI.git
+	url = https://github.com/Aurora-CX-65/YueChuangJiUI.git
