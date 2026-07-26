@@ -1,0 +1,43 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# 环境变量（构建时通过 --build-arg 注入）
+.env
+.env.local
+.env.*.local
+
+# 日志
+*.log
+npm-debug.log*
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# 文档
+*.md
+!README.md
+
+# 测试
+tests/
+__tests__/
+*.test.js
+*.spec.js
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+*~

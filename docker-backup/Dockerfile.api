@@ -1,0 +1,48 @@
+# ============================================
+# 阅创集 (YueChuangJi) 后端 API Dockerfile
+# Spring Boot 3.5.2 + Java 17 + Maven
+# ============================================
+
+# ---- 阶段一：Maven 构建 ----
+FROM maven:3.9-eclipse-temurin-17-alpine AS builder
+
+WORKDIR /build
+
+# 先复制 pom.xml，利用 Docker 缓存层加速依赖下载
+COPY pom.xml .
+RUN mvn dependency:go-offline -B -q
+
+# 复制源码并构建（跳过测试）
+COPY src ./src
+RUN mvn clean package -DskipTests -B -q
+
+# ---- 阶段二：JRE 运行 ----
+FROM eclipse-temurin:17-jre-alpine
+
+# 安全：以非 root 用户运行
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+# 复制构建产物
+COPY --from=builder /build/target/*.jar app.jar
+
+# 创建挂载目录
+RUN mkdir -p /uploads /var/log/yuechuangji-api \
+    && chown -R appuser:appgroup /app /uploads /var/log/yuechuangji-api
+
+# 切换到非 root 用户
+USER appuser
+
+# 暴露端口
+EXPOSE 8080
+
+# JVM 优化参数 + Spring Boot 启动
+# -XX:+UseContainerSupport: 启用容器感知内存
+# -XX:MaxRAMPercentage=75.0: JVM 最大使用容器内存的 75%
+ENTRYPOINT ["java", \
+    "-XX:+UseContainerSupport", \
+    "-XX:MaxRAMPercentage=75.0", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-Dspring.profiles.active=prod", \
+    "-jar", "app.jar"]
